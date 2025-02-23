@@ -8,27 +8,25 @@ import config  # Ensure you have a config.py file with your API keys
 GITHUB_TOKEN = config.GITHUB_TOKEN
 OPENAI_API_KEY = config.OPENAI_API_KEY
 
-# Repo details
-REPO_OWNER = "IMT598-Epistemological-AI"
-REPO_NAME = "IMT598A"
 HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"}
-
-# Base GitHub API URL
-BASE_URL = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}"
-
-# GitHub API Endpoints
-ENDPOINTS = {
-    "repo_info": BASE_URL,
-    "list_files": f"{BASE_URL}/contents",
-    "list_issues": f"{BASE_URL}/issues",
-    "list_prs": f"{BASE_URL}/pulls",
-    "list_commits": f"{BASE_URL}/commits",
-}
 
 
 class GitHubAI:
-    def __init__(self):
+    def __init__(self, repo_url):
+        self.repo_url = repo_url.rstrip("/")
         self.llm = ChatOpenAI(model_name="gpt-4o", openai_api_key=OPENAI_API_KEY)
+
+    def get_endpoints(self):
+        """Dynamically create GitHub API endpoints based on the user's repo"""
+        return {
+            "repo_info": self.repo_url,
+            "list_files": f"{self.repo_url}/contents",
+            "list_issues": f"{self.repo_url}/issues",
+            "list_open_issues": f"{self.repo_url}/issues?state=open",
+            "list_closed_issues": f"{self.repo_url}/issues?state=closed",
+            "list_prs": f"{self.repo_url}/pulls",
+            "list_commits": f"{self.repo_url}/commits",
+        }
 
     def decide_action(self, user_query):
         """Uses GPT-4 to determine which GitHub API action is needed"""
@@ -43,18 +41,11 @@ class GitHubAI:
 
     def fetch_github_data(self, action):
         """Fetches raw data from GitHub API dynamically"""
-        if action not in ENDPOINTS and action not in ["list_open_issues", "list_closed_issues"]:
+        endpoints = self.get_endpoints()
+        if action not in endpoints:
             return "❌ Invalid action"
 
-        # Dynamically construct URLs for open/closed issues
-        if action == "list_open_issues":
-            url = f"{BASE_URL}/issues?state=open"
-        elif action == "list_closed_issues":
-            url = f"{BASE_URL}/issues?state=closed"
-        else:
-            url = ENDPOINTS[action]
-
-        response = requests.get(url, headers=HEADERS)
+        response = requests.get(endpoints[action], headers=HEADERS)
         if response.status_code == 200:
             return response.json()
         return f"❌ Error fetching data: {response.json()}"
