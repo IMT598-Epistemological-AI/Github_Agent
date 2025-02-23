@@ -1,11 +1,12 @@
-import requests
+"""Github AI agent to parse github data and answer user queries."""
+
 from datetime import datetime
+import requests
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage
 
 import config  # Ensure you have a config.py file with your API keys
 
-# 🚀 Replace with your API Keys
 GITHUB_TOKEN = config.GITHUB_TOKEN
 OPENAI_API_KEY = config.OPENAI_API_KEY
 
@@ -13,6 +14,8 @@ HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"}
 
 
 class GitHubAI:
+    """GitHub AI agent to parse GitHub data and answer user queries."""
+
     def __init__(self, repo_url):
         self.repo_url = repo_url.rstrip("/")
         self.llm = ChatOpenAI(model_name="gpt-4o", openai_api_key=OPENAI_API_KEY)
@@ -46,7 +49,7 @@ class GitHubAI:
         if action not in endpoints:
             return "❌ Invalid action"
 
-        response = requests.get(endpoints[action], headers=HEADERS)
+        response = requests.get(endpoints[action], headers=HEADERS, timeout=20)
         if response.status_code == 200:
             data = response.json()
 
@@ -64,6 +67,9 @@ class GitHubAI:
 
     def format_datetime(self, iso_string):
         """Helper function to convert ISO 8601 string to separate date and time"""
+        if not iso_string:
+            return "Not Closed", "Not Closed"
+
         try:
             dt = datetime.strptime(iso_string, "%Y-%m-%dT%H:%M:%SZ")
             return dt.strftime("%Y-%m-%d"), dt.strftime("%H:%M:%S")
@@ -111,7 +117,7 @@ class GitHubAI:
         return {"commit_count": len(commit_details), "commits": commit_details}
 
     def process_issues(self, issue_data):
-        """Processes all issues into a structured format with detailed information."""
+        """Processes all issues into a structured format with detailed information, including close date."""
         if not issue_data:
             return {"issue_count": 0, "issues": []}
 
@@ -123,10 +129,12 @@ class GitHubAI:
             issue_number = issue.get("number", "Unknown")
             issue_state = issue.get("state", "Unknown")
             issue_datetime = issue.get("created_at", "Unknown")
+            issue_closed_datetime = issue.get("closed_at")
             issue_url = issue.get("html_url", "No URL available")
             comments = issue.get("comments", 0)
 
             issue_date, issue_time = self.format_datetime(issue_datetime)
+            closed_date, closed_time = self.format_datetime(issue_closed_datetime)
 
             issue_details.append(
                 {
@@ -137,6 +145,8 @@ class GitHubAI:
                     "state": issue_state,
                     "date": issue_date,
                     "time": issue_time,
+                    "closed_date": closed_date,
+                    "closed_time": closed_time,
                     "url": issue_url,
                     "comments": comments,
                 }
@@ -162,7 +172,9 @@ class GitHubAI:
             commits = pr.get("commits", 0)
             additions = pr.get("additions", 0)
             deletions = pr.get("deletions", 0)
-            merged = pr.get("merged", False)
+            merged = (
+                pr.get("merged_at") is not None
+            )  # If merged_at is not None, it's merged
 
             pr_date, pr_time = self.format_datetime(pr_datetime)
 
