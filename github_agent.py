@@ -34,7 +34,9 @@ class GitHubAI:
             "Current actions: repo_info, list_files, list_issues, list_prs, list_commits."
             "Return only the action name as output."
         )
-        user_message = HumanMessage(content=f"User Query: {user_query}\nWhich action should I take?")
+        user_message = HumanMessage(
+            content=f"User Query: {user_query}\nWhich action should I take?"
+        )
         response = self.llm([system_message, user_message])
         return response.content.strip()
 
@@ -76,25 +78,35 @@ class GitHubAI:
         commit_details = []
 
         for num, commit in enumerate(commit_data, start=1):
-            author_name = commit.get("commit", {}).get("author", {}).get("name", "Unknown")
-            author_email = commit.get("commit", {}).get("author", {}).get("email", "Unknown")
-            commit_datetime = commit.get("commit", {}).get("author", {}).get("date", "Unknown")
-            commit_message = commit.get("commit", {}).get("message", "No message provided")
+            author_name = (
+                commit.get("commit", {}).get("author", {}).get("name", "Unknown")
+            )
+            author_email = (
+                commit.get("commit", {}).get("author", {}).get("email", "Unknown")
+            )
+            commit_datetime = (
+                commit.get("commit", {}).get("author", {}).get("date", "Unknown")
+            )
+            commit_message = commit.get("commit", {}).get(
+                "message", "No message provided"
+            )
             commit_sha = commit.get("sha", "Unknown")
             commit_url = commit.get("html_url", "No URL available")
 
             commit_date, commit_time = self.format_datetime(commit_datetime)
 
-            commit_details.append({
-                "commit_num": num,
-                "author": author_name,
-                "email": author_email,
-                "sha": commit_sha,
-                "message": commit_message,
-                "date": commit_date,
-                "time": commit_time,
-                "url": commit_url
-            })
+            commit_details.append(
+                {
+                    "commit_num": num,
+                    "author": author_name,
+                    "email": author_email,
+                    "sha": commit_sha,
+                    "message": commit_message,
+                    "date": commit_date,
+                    "time": commit_time,
+                    "url": commit_url,
+                }
+            )
 
         return {"commit_count": len(commit_details), "commits": commit_details}
 
@@ -116,17 +128,19 @@ class GitHubAI:
 
             issue_date, issue_time = self.format_datetime(issue_datetime)
 
-            issue_details.append({
-                "issue_num": num,
-                "author": author_name,
-                "number": issue_number,
-                "title": issue_title,
-                "state": issue_state,
-                "date": issue_date,
-                "time": issue_time,
-                "url": issue_url,
-                "comments": comments
-            })
+            issue_details.append(
+                {
+                    "issue_num": num,
+                    "author": author_name,
+                    "number": issue_number,
+                    "title": issue_title,
+                    "state": issue_state,
+                    "date": issue_date,
+                    "time": issue_time,
+                    "url": issue_url,
+                    "comments": comments,
+                }
+            )
 
         return {"issue_count": len(issue_details), "issues": issue_details}
 
@@ -152,21 +166,23 @@ class GitHubAI:
 
             pr_date, pr_time = self.format_datetime(pr_datetime)
 
-            pr_details.append({
-                "pr_num": num,
-                "author": author_name,
-                "number": pr_number,
-                "title": pr_title,
-                "state": pr_state,
-                "date": pr_date,
-                "time": pr_time,
-                "url": pr_url,
-                "comments": comments,
-                "commits": commits,
-                "additions": additions,
-                "deletions": deletions,
-                "merged": merged
-            })
+            pr_details.append(
+                {
+                    "pr_num": num,
+                    "author": author_name,
+                    "number": pr_number,
+                    "title": pr_title,
+                    "state": pr_state,
+                    "date": pr_date,
+                    "time": pr_time,
+                    "url": pr_url,
+                    "comments": comments,
+                    "commits": commits,
+                    "additions": additions,
+                    "deletions": deletions,
+                    "merged": merged,
+                }
+            )
 
         return {"pr_count": len(pr_details), "prs": pr_details}
 
