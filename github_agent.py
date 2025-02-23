@@ -3,6 +3,7 @@
 from datetime import datetime
 import requests
 from langchain.chat_models import ChatOpenAI
+from langchain_ollama import ChatOllama
 from langchain.schema import SystemMessage, HumanMessage
 
 import config  # Ensure you have a config.py file with your API keys
@@ -16,9 +17,12 @@ HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"}
 class GitHubAI:
     """GitHub AI agent to parse GitHub data and answer user queries."""
 
-    def __init__(self, repo_url):
+    def __init__(self, repo_url, model_name):
         self.repo_url = repo_url.rstrip("/")
-        self.llm = ChatOpenAI(model_name="gpt-4o", openai_api_key=OPENAI_API_KEY)
+        if model_name == "GPT":
+            self.llm = ChatOpenAI(model_name="gpt-4o", openai_api_key=OPENAI_API_KEY)
+        else:
+            self.llm = ChatOllama(model="llama3.1", temperature=0)
 
     def get_endpoints(self):
         """Dynamically create GitHub API endpoints based on the user's repo"""
